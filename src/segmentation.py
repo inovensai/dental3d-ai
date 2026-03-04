@@ -362,14 +362,17 @@ class Teeth3DSTorchDataset(Dataset):
             dtype=np.int64,
         )
 
-        # Normalizasyon: merkeze al ve birim küreye ölçekle
+        points = points.astype(np.float32)
+
         centroid = points.mean(axis=0)
         points = points - centroid
         max_dist = np.max(np.linalg.norm(points, axis=1))
-        if max_dist > 0:
+        if max_dist > 1e-8:
             points = points / max_dist
 
-        # Veri çoğaltma
+        if not np.all(np.isfinite(points)):
+            points = np.nan_to_num(points, nan=0.0, posinf=0.0, neginf=0.0)
+
         if self.augment:
             points = self._augment(points)
 
@@ -379,15 +382,14 @@ class Teeth3DSTorchDataset(Dataset):
         return torch.from_numpy(points).float(), torch.from_numpy(index_labels).long()
 
     def _augment(self, points: np.ndarray) -> np.ndarray:
-        """Rastgele rotasyon ve jitter uygular."""
-        # Rastgele Y ekseni etrafında rotasyon
         angle = np.random.uniform(0, 2 * np.pi)
         cos_a, sin_a = np.cos(angle), np.sin(angle)
-        R = np.array([[cos_a, 0, sin_a], [0, 1, 0], [-sin_a, 0, cos_a]])
+        R = np.array([[cos_a, 0, sin_a], [0, 1, 0], [-sin_a, 0, cos_a]], dtype=np.float32)
         points = points @ R.T
 
-        # Jitter (küçük gürültü)
         jitter = np.random.normal(0, 0.002, points.shape).astype(np.float32)
         points = points + jitter
+
+        points = np.clip(points, -10.0, 10.0)
 
         return points
