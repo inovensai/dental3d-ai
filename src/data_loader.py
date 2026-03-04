@@ -168,6 +168,11 @@ class DentalMesh:
 
         points, face_indices = trimesh.sample.sample_surface(mesh, num_points)
         points = np.array(points, dtype=np.float32)
+
+        finite_mask = np.all(np.isfinite(points), axis=1)
+        if not np.all(finite_mask):
+            points[~finite_mask] = 0.0
+
         normals = np.array(mesh.face_normals[face_indices], dtype=np.float32)
 
         result = {"points": points, "normals": normals}

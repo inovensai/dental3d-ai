@@ -363,15 +363,15 @@ class Teeth3DSTorchDataset(Dataset):
         )
 
         points = points.astype(np.float32)
+        points = np.nan_to_num(points, nan=0.0, posinf=0.0, neginf=0.0)
 
         centroid = points.mean(axis=0)
         points = points - centroid
         max_dist = np.max(np.linalg.norm(points, axis=1))
         if max_dist > 1e-8:
             points = points / max_dist
-
-        if not np.all(np.isfinite(points)):
-            points = np.nan_to_num(points, nan=0.0, posinf=0.0, neginf=0.0)
+        else:
+            points = np.zeros_like(points)
 
         if self.augment:
             points = self._augment(points)
