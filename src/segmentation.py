@@ -373,6 +373,8 @@ class Teeth3DSTorchDataset(Dataset):
         else:
             points = np.zeros_like(points)
 
+        points = np.nan_to_num(points, nan=0.0, posinf=0.0, neginf=0.0)
+
         if self.augment:
             points = self._augment(points)
 
@@ -382,14 +384,20 @@ class Teeth3DSTorchDataset(Dataset):
         return torch.from_numpy(points).float(), torch.from_numpy(index_labels).long()
 
     def _augment(self, points: np.ndarray) -> np.ndarray:
+        if not np.all(np.isfinite(points)):
+            points = np.nan_to_num(points, nan=0.0, posinf=0.0, neginf=0.0)
+
         angle = np.random.uniform(0, 2 * np.pi)
-        cos_a, sin_a = np.cos(angle), np.sin(angle)
+        cos_a = np.float32(np.cos(angle))
+        sin_a = np.float32(np.sin(angle))
         R = np.array([[cos_a, 0, sin_a], [0, 1, 0], [-sin_a, 0, cos_a]], dtype=np.float32)
-        points = points @ R.T
+
+        with np.errstate(all="ignore"):
+            points = points @ R.T
+
+        points = np.nan_to_num(points, nan=0.0, posinf=0.0, neginf=0.0)
 
         jitter = np.random.normal(0, 0.002, points.shape).astype(np.float32)
         points = points + jitter
 
-        points = np.clip(points, -10.0, 10.0)
-
-        return points
+        return np.clip(points, -10.0, 10.0)
