@@ -1,0 +1,49 @@
+# ─── Veri dosyalari (cok buyuk, GitHub'a yuklenemez) ───
+data_part_*/
+3DTeethLand_landmarks_train/
+3DTeethLand_landmarks_test/
+*.obj
+*.stl
+*.ply
+
+# ─── Model dosyalari ───
+models/*.pth
+models/*.pt
+
+# ─── Ciktilar ───
+outputs/
+
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ─── Sanal ortam ───
+venv/
+env/
+.venv/
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+
+# ─── Claude ───
+.claude/
+
+# ─── Jupyter ───
+.ipynb_checkpoints/
+
+# ─── Diger ───
+datas.txt
