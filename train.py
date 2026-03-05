@@ -13,6 +13,7 @@ from pathlib import Path
 from datetime import datetime
 
 import numpy as np
+import os
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -32,6 +33,7 @@ def main():
     parser = argparse.ArgumentParser(description="PointNet Dis Segmentasyonu Egitimi")
     parser.add_argument("--epochs", type=int, default=50, help="Epoch sayisi")
     parser.add_argument("--batch", type=int, default=4, help="Batch boyutu")
+    parser.add_argument("--num-workers", type=int, default=None, help="DataLoader num_workers (default: cpu_count-1)")
     parser.add_argument("--lr", type=float, default=0.001, help="Ogrenme orani")
     parser.add_argument("--num-points", type=int, default=24000, help="Orneklenen nokta sayisi")
     parser.add_argument("--parts", nargs="+", type=int, default=list(range(1, 7)),
@@ -63,13 +65,24 @@ def main():
         fdi_to_index=FDI_TO_INDEX, augment=False,
     )
 
+    # Determine sensible defaults for data loading parallelism
+    cpu_count = os.cpu_count() or 1
+    default_workers = max(1, min(8, cpu_count - 1))
+    num_workers = args.num_workers if args.num_workers is not None else default_workers
+
+    # Pin memory helps only for CUDA; for MPS/CPU it should be False
+    device_name = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
+    pin_memory = True if device_name == "cuda" else False
+
     train_loader = DataLoader(
         train_dataset, batch_size=args.batch,
-        shuffle=True, num_workers=0, drop_last=True,
+        shuffle=True, num_workers=num_workers, drop_last=True,
+        pin_memory=pin_memory, persistent_workers=(num_workers > 0),
     )
     val_loader = DataLoader(
         val_dataset, batch_size=args.batch,
-        shuffle=False, num_workers=0, drop_last=False,
+        shuffle=False, num_workers=num_workers, drop_last=False,
+        pin_memory=pin_memory, persistent_workers=(num_workers > 0),
     )
 
     print(f"  Egitim batch sayisi: {len(train_loader)}")
